@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static ru.dartinc.braintrainer.R.color.*;
+
 
 public class MainActivity extends AppCompatActivity {
     private TextView textViewOpinion0;
@@ -48,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
             public void onTick(long millisUntilFinished) {
                 textViewTimer.setText(getTimeString(millisUntilFinished));
                 if(millisUntilFinished<10000){
-                    textViewTimer.setTextColor(getResources().getColor(android.R.color.holo_red_light));
+                    textViewTimer.setTextColor(getColor(red));
                 }
             }
 
