@@ -2,13 +2,19 @@ package ru.dartinc.braintrainer;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -28,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private List<TextView> textViewList = new ArrayList<>();
     private int score;
     private int countAnswer;
-
+    private boolean gameOver = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,19 +43,50 @@ public class MainActivity extends AppCompatActivity {
         getView();
         fillListTextView();
         startGame();
+        CountDownTimer timer = new CountDownTimer(20000,1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                textViewTimer.setText(getTimeString(millisUntilFinished));
+                if(millisUntilFinished<10000){
+                    textViewTimer.setTextColor(getResources().getColor(android.R.color.holo_red_light));
+                }
+            }
 
+            @Override
+            public void onFinish() {
+                gameOver = true;
+                textViewTimer.setText(getTimeString(0L));
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                int max = preferences.getInt("max",0);
+                if(score>max){
+                    Log.i("MyPreferences",Integer.toString(score));
+                    preferences.edit().putInt("max",score).apply();
+                }
+                Intent intent = new Intent(MainActivity.this,ScoreActivity.class);
+                intent.putExtra("result",textViewScore.getText().toString());
+                startActivity(intent);
+            }
+        };
+        timer.start();
+    }
+
+    private  String getTimeString(Long msec){
+        long sec = msec/1000;
+        long min = sec/60;
+        sec = sec%60;
+        return String.format(Locale.getDefault(),"%02d:%02d",min,sec);
     }
 
     private void fillTextView() {
         for (int i = 0; i < textViewList.size(); i++) {
             TextView textView = textViewList.get(i);
             if (i == rightAnswerPosition) {
-                textView.setText(Integer.toString(rightAnswer));
+                textView.setText(String.format("%s",rightAnswer));
             } else {
-                textView.setText(Integer.toString(generateWrongAnswer()));
+                textView.setText(String.format("%s",generateWrongAnswer()));
             }
         }
-        textViewScore.setText(String.format("%s / %s", Integer.toString(score), Integer.toString(countAnswer)));
+        textViewScore.setText(String.format("%s / %s", score, countAnswer));
         textViewQuession.setText(question);
     }
 
@@ -100,15 +137,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickAnswer(View view) {
-        TextView textView = (TextView) view;
-        if (Integer.parseInt(textView.getText().toString()) == rightAnswer) {
-            score++;
-            Toast.makeText(this, "Верно", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "НЕВЕРНО", Toast.LENGTH_SHORT).show();
-        }
-        countAnswer++;
+        if(!gameOver) {
+            TextView textView = (TextView) view;
+            if (Integer.parseInt(textView.getText().toString()) == rightAnswer) {
+                score++;
+                Toast.makeText(this, "Верно", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "НЕВЕРНО", Toast.LENGTH_SHORT).show();
+            }
+            countAnswer++;
 
-        startGame();
+            startGame();
+        }
     }
+
 }
